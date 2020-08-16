@@ -12,7 +12,8 @@ public class UrlParser {
     static String query = "(?:" + pchar + "|/|\\?)*";
     static String fragment = query;
     static String regName = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + ")*";
-    
+
+    static Pattern urlComponents = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?$");
     static Pattern scheme = Pattern.compile("^[a-zA-Z][-a-zA-Z+\\.]*:");
     static Pattern hostname = Pattern.compile(regName);
     static Pattern port = Pattern.compile(":(\\d{1,5})");
