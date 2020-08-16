@@ -42,4 +42,48 @@ public class UrlParserTest {
         assertFalse(found);
         assertThrows(IllegalStateException.class, () -> matcher.group());
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "www.normal.com",
+            "www.!$&'()*+,;=-~.com",
+            "www.spaced%20url.com",
+            "www.%41.com"})
+    public void UrlParser_HostnameRegex_ShouldMatchValidHostnames(String hostname) {
+        Matcher matcher = UrlParser.hostname.matcher(hostname);
+
+        boolean found = matcher.find();
+
+        assertTrue(found);
+        assertEquals(hostname, matcher.group());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            ":80",
+            ":65535",
+            ":22"})
+    public void UrlParser_PortRegex_ShouldMatchValidPort(String port) {
+        Matcher matcher = UrlParser.port.matcher(port);
+
+        boolean found = matcher.find();
+
+        assertTrue(found);
+        assertEquals(port, matcher.group());
+        assertEquals(port.substring(1), matcher.group(1));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "?validQueryString",
+            "?yet%20another%20valid%20query%20string",
+            "?query=true&params=true"})
+    public void UrlParser_QueryStringRegex_ShouldMatchValidQueryString(String queryString) {
+        Matcher matcher = UrlParser.queryString.matcher(queryString);
+
+        boolean found = matcher.find();
+
+        assertTrue(found);
+        assertEquals(queryString, matcher.group());
+    }
 }
