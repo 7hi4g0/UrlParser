@@ -77,7 +77,9 @@ public class UrlParserTest {
     @ValueSource(strings = {
             "?validQueryString",
             "?yet%20another%20valid%20query%20string",
-            "?query=true&params=true"})
+            "?query=true&params=true",
+            "?",
+            "?!$&'()*+,;="})
     public void UrlParser_QueryStringRegex_ShouldMatchValidQueryString(String queryString) {
         Matcher matcher = UrlParser.queryString.matcher(queryString);
 
@@ -85,5 +87,24 @@ public class UrlParserTest {
 
         assertTrue(found);
         assertEquals(queryString, matcher.group());
+        assertEquals(queryString.substring(1), matcher.group(1));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "#main",
+            "#summary",
+            "#",
+            "#?random-stuff",
+            "#article%20conclusion",
+            "#!$&'()*+,;="})
+    public void UrlParser_PageFragmentRegex_ShouldMatchValidPageFragment(String pageFragment) {
+        Matcher matcher = UrlParser.pageFragment.matcher(pageFragment);
+
+        boolean found = matcher.find();
+
+        assertTrue(found);
+        assertEquals(pageFragment, matcher.group());
+        assertEquals(pageFragment.substring(1), matcher.group(1));
     }
 }
