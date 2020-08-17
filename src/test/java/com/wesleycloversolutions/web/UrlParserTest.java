@@ -19,12 +19,15 @@ public class UrlParserTest {
 
     @ParameterizedTest
     @MethodSource("provideUrlComponents")
-    public void UrlParser_parse_ShouldParseCorrectURLs(String url, String scheme, String authority, String path, String query, String fragment) throws MalformedURLException {
+    public void UrlParser_parse_ShouldParseCorrectURLs(String url, String scheme, String _authority, String username, String password, String host, int port, String path, String query, String fragment) throws MalformedURLException {
         Url parsedUrl = UrlParser.parse(url);
 
         assertNotNull(parsedUrl);
         assertEquals(scheme, parsedUrl.getProtocol());
-        //assertEquals(authority, matcher.group(2));
+        // assertEquals(username, parsedUrl.getUsername());
+        // assertEquals(password, parsedUrl.getPassword());
+        assertEquals(host, parsedUrl.getHostname());
+        assertEquals(port, parsedUrl.getPort());
         assertEquals(path, parsedUrl.getPath());
         //assertEquals(query, matcher.group(4));
         assertEquals(fragment, parsedUrl.getDocumentPart());
@@ -32,7 +35,7 @@ public class UrlParserTest {
 
     @ParameterizedTest
     @MethodSource("provideUrlComponents")
-    public void UrlParser_ComponentsRegex_ShouldMatchComponents(String url, String scheme, String authority, String path, String query, String fragment) {
+    public void UrlParser_ComponentsRegex_ShouldMatchComponents(String url, String scheme, String authority, String _username, String _password, String _host, int _port, String path, String query, String fragment) {
         Matcher matcher = UrlParser.urlComponents.matcher(url);
 
         boolean found = matcher.matches();
@@ -199,26 +202,26 @@ public class UrlParserTest {
 
     private static Stream<Arguments> provideUrlComponents() {
         return Stream.of(
-                //          | URL -------------------------------------------------------------| scheme ---| authority --------------------| path ---------------------------------| query ----| fragment |
-                Arguments.of("http://www.ics.uci.edu/pub/ietf/uri/#Related",                    "http",     "www.ics.uci.edu",              "/pub/ietf/uri/",                       null,       "Related"),
-                Arguments.of("http://www.w3.org/Addressing/",                                   "http",     "www.w3.org",                   "/Addressing/",                         null,       null),
-                Arguments.of("ftp://foo.example.com/rfc/",                                      "ftp",      "foo.example.com",              "/rfc/",                                null,       null),
-                Arguments.of("http://www.ics.uci.edu/pub/ietf/uri/historical.html#WARNING",     "http",     "www.ics.uci.edu",              "/pub/ietf/uri/historical.html",        null,       "WARNING"),
-                Arguments.of("file:///C:/demo",                                                 "file",     "",                             "/C:/demo",                             null,       null),
-                Arguments.of("file:///C:/",                                                     "file",     "",                             "/C:/",                                 null,       null),
-                Arguments.of("file:///",                                                        "file",     "",                             "/",                                    null,       null),
-                Arguments.of("https://example.org",                                             "https",    "example.org",                  "",                                     null,       null),
-                Arguments.of("https://user:password@example.org/",                              "https",    "user:password@example.org",    "/",                                    null,       null),
-                Arguments.of("https://example.org/foo%20bar",                                   "https",    "example.org",                  "/foo%20bar",                           null,       null),
-                Arguments.of("https://example.com///",                                          "https",    "example.com",                  "///",                                  null,       null),
-                Arguments.of("https://example.com/foo",                                         "https",    "example.com",                  "/foo",                                 null,       null),
-                Arguments.of("https://example.org/",                                            "https",    "example.org",                  "/",                                    null,       null),
-                Arguments.of("https://example.com/example.org",                                 "https",    "example.com",                  "/example.org",                         null,       null),
-                Arguments.of("https://example.com/demo/",                                       "https",    "example.com",                  "/demo/",                               null,       null),
-                Arguments.of("https://example.com/example",                                     "https",    "example.com",                  "/example",                             null,       null),
-                Arguments.of("https://localhost:8000/search?q=text#hello",                      "https",    "localhost:8000",               "/search",                              "q=text",   "hello"),
-                Arguments.of("urn:isbn:9780307476463",                                          "urn",      null,                           "isbn:9780307476463",                   null,       null),
-                Arguments.of("file:///ada/Analytical%20Engine/README.md",                       "file",     "",                             "/ada/Analytical%20Engine/README.md",   null,       null)
+                //          | URL -------------------------------------------------------------| scheme ---| authority --------------------| user -| password -| hostname----------| port--| path ---------------------------------| query ----| fragment |
+                Arguments.of("http://www.ics.uci.edu/pub/ietf/uri/#Related",                    "http",     "www.ics.uci.edu",              null,   null,       "www.ics.uci.edu",  80,     "/pub/ietf/uri/",                       null,       "Related"),
+                Arguments.of("http://www.w3.org/Addressing/",                                   "http",     "www.w3.org",                   null,   null,       "www.w3.org",       80,     "/Addressing/",                         null,       null),
+                Arguments.of("ftp://foo.example.com/rfc/",                                      "ftp",      "foo.example.com",              null,   null,       "foo.example.com",  21,     "/rfc/",                                null,       null),
+                Arguments.of("http://www.ics.uci.edu/pub/ietf/uri/historical.html#WARNING",     "http",     "www.ics.uci.edu",              null,   null,       "www.ics.uci.edu",  80,     "/pub/ietf/uri/historical.html",        null,       "WARNING"),
+                Arguments.of("file:///C:/demo",                                                 "file",     "",                             null,   null,       "",                 0,      "/C:/demo",                             null,       null),
+                Arguments.of("file:///C:/",                                                     "file",     "",                             null,   null,       "",                 0,      "/C:/",                                 null,       null),
+                Arguments.of("file:///",                                                        "file",     "",                             null,   null,       "",                 0,      "/",                                    null,       null),
+                Arguments.of("https://example.org",                                             "https",    "example.org",                  null,   null,       "example.org",      443,    "",                                     null,       null),
+                Arguments.of("https://user:password@example.org/",                              "https",    "user:password@example.org",    "user", "password", "example.org",      443,    "/",                                    null,       null),
+                Arguments.of("https://example.org/foo%20bar",                                   "https",    "example.org",                  null,   null,       "example.org",      443,    "/foo%20bar",                           null,       null),
+                Arguments.of("https://example.com///",                                          "https",    "example.com",                  null,   null,       "example.com",      443,    "///",                                  null,       null),
+                Arguments.of("https://example.com/foo",                                         "https",    "example.com",                  null,   null,       "example.com",      443,    "/foo",                                 null,       null),
+                Arguments.of("https://example.org/",                                            "https",    "example.org",                  null,   null,       "example.org",      443,    "/",                                    null,       null),
+                Arguments.of("https://example.com/example.org",                                 "https",    "example.com",                  null,   null,       "example.com",      443,    "/example.org",                         null,       null),
+                Arguments.of("https://example.com/demo/",                                       "https",    "example.com",                  null,   null,       "example.com",      443,    "/demo/",                               null,       null),
+                Arguments.of("https://example.com/example",                                     "https",    "example.com",                  null,   null,       "example.com",      443,    "/example",                             null,       null),
+                Arguments.of("https://localhost:8000/search?q=text#hello",                      "https",    "localhost:8000",               null,   null,       "localhost",        8000,   "/search",                              "q=text",   "hello"),
+                Arguments.of("urn:isbn:9780307476463",                                          "urn",      null,                           null,   null,       null,               0,      "isbn:9780307476463",                   null,       null),
+                Arguments.of("file:///ada/Analytical%20Engine/README.md",                       "file",     "",                             null,   null,       "",                 0,      "/ada/Analytical%20Engine/README.md",   null,       null)
         );
     }
 }
