@@ -25,7 +25,7 @@ public class UrlParserTest {
         assertNotNull(parsedUrl);
         assertEquals(scheme, parsedUrl.getProtocol());
         //assertEquals(authority, matcher.group(2));
-        //assertEquals(path, matcher.group(3));
+        assertEquals(path, parsedUrl.getPath());
         //assertEquals(query, matcher.group(4));
         assertEquals(fragment, parsedUrl.getDocumentPart());
     }
@@ -87,6 +87,67 @@ public class UrlParserTest {
 
         assertTrue(found);
         assertEquals(hostname, matcher.group());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/pub/ietf/uri/",
+            "/pub/ietf/uri",
+            "//pub/ietf/uri/",
+            "//pub/ietf/uri",
+            "/pub/ietf/uri//",
+            ""})
+    public void UrlParser_PathWithAuthorityRegex_ShouldMatchValidPaths(String path) {
+        Matcher matcher = UrlParser.pathWithAuthority.matcher(path);
+
+        boolean found = matcher.matches();
+
+        assertTrue(found);
+        assertEquals(path, matcher.group());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "pub/ietf/uri/",
+            "pub"})
+    public void UrlParser_PathWithAuthorityRegex_ShouldNotMatchInvalidPaths(String path) {
+        Matcher matcher = UrlParser.pathWithAuthority.matcher(path);
+
+        boolean found = matcher.matches();
+
+        assertFalse(found);
+        assertThrows(IllegalStateException.class, () -> matcher.group());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/pub/ietf/uri/",
+            "/pub/ietf/uri//",
+            "/pub/ietf/uri",
+            "pub/ietf/uri//",
+            "pub/ietf/uri",
+            "pub",
+            ""})
+    public void UrlParser_PathNoAuthorityRegex_ShouldMatchValidPaths(String path) {
+        Matcher matcher = UrlParser.pathNoAuthority.matcher(path);
+
+        boolean found = matcher.matches();
+
+        assertTrue(found);
+        assertEquals(path, matcher.group());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "//pub/ietf/uri/",
+            "///"})
+    public void UrlParser_PathNoAuthorityRegex_ShouldNotMatchInvalidPaths(String path) {
+        Matcher matcher = UrlParser.pathNoAuthority.matcher(path);
+
+        boolean found = matcher.matches();
+
+        assertFalse(found);
+        assertThrows(IllegalStateException.class, () -> matcher.group());
     }
 
     @ParameterizedTest

@@ -15,11 +15,16 @@ public class UrlParser {
     private static String query = "(?:" + pchar + "|/|\\?)*";
     private static String fragment = query;
     private static String regName = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + ")*";
+    private static String segmentChar = "(?:" + pchar + ")";
+
 
     public static Pattern urlComponents = Pattern.compile("(?:([^:/?#]+):)(?://([^/?#]*))?([^?#]*)(?:\\?([^#]*))?(?:#(.*))?");
     public static Pattern scheme = Pattern.compile("^[a-zA-Z][-a-zA-Z+\\.]*");
     public static Pattern hostname = Pattern.compile(regName);
     public static Pattern port = Pattern.compile("\\d{1,5}");
+    public static Pattern pathWithAuthority = Pattern.compile("(?:/" + segmentChar + "*)*");
+    public static Pattern pathRootless = Pattern.compile("(?:" + segmentChar + "+(?:" + pathWithAuthority + ")*)");
+    public static Pattern pathNoAuthority = Pattern.compile("(?:/" + pathRootless + "?|" + pathRootless + ")?");
     public static Pattern queryString = Pattern.compile(query);
     public static Pattern queryParam = Pattern.compile("(?:(" + query + ")(?:=(" + query + "))?)");
     public static Pattern pageFragment = Pattern.compile(fragment);
@@ -43,6 +48,19 @@ public class UrlParser {
         // Validate scheme, a.k.a protocol
         if (scheme != null && !UrlParser.scheme.matcher(scheme).matches()) {
             throw new MalformedURLException("Invalid protocol specified: " + scheme);
+        }
+
+        // Validate path
+        if (path != null) {
+            if (authority != null) {
+                if (!UrlParser.pathWithAuthority.matcher(path).matches()) {
+                    throw new MalformedURLException("Invalid path specified: " + path);
+                }
+            } else {
+                if (!UrlParser.pathNoAuthority.matcher(path).matches()) {
+                    throw new MalformedURLException("Invalid path specified: " + path);
+                }
+            }
         }
 
         // Validate and parses query
@@ -74,6 +92,6 @@ public class UrlParser {
             throw new MalformedURLException("Invalid fragment specified: " + fragment);
         }
 
-        return new Url(scheme, null, null, null, 0, null, queryParams, fragment);
+        return new Url(scheme, null, null, null, 0, path, queryParams, fragment);
     }
 }
