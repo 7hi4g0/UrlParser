@@ -8,16 +8,34 @@ import java.util.regex.Pattern;
 // All based on RFC 3986
 public class UrlParser {
     // Regex based on https://tools.ietf.org/html/rfc3986
+    private static final String decOctet = "(?:(?:[1-9]|1\\d|2[0-4])\\d|25[0-5])";
     private static final String hexDig = "[a-fA-F0-9]";
+    private static final String hex16 = hexDig + "{1,4}";
     private static final String unreserved = "[-\\w\\.~]";
     private static final String subDelims = "[!$&'()*+,;=]";
+    private static final String subDelimsNoEq = "[!$&'()*+,;]";
     private static final String pctEncoded = "%" + hexDig + hexDig;
     private static final String pchar = unreserved  + "|" + pctEncoded +"|"+ subDelims + "|:|@";
+    private static final String pcharNoEq = unreserved  + "|" + pctEncoded +"|"+ subDelimsNoEq + "|:|@";
     private static final String username = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + ")*";
     private static final String password = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + "|:)*";
     private static final String regName = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + ")*";
+    private static final String ipv4 = "(?:" + decOctet + "(?:\\." + decOctet + "){3})";
+    private static final String ls32 = "(?:" + hex16 + ":" + hex16 +"|" + ipv4 + ")";
+    private static final String ipv6Part = "(?:" + hex16 + ":)";
+    private static final String ipv6 = "(?:"
+                                                + ipv6Part + "{6}" + ls32 + "|"
+                                         + "::" + ipv6Part + "{5}" + ls32 + "|"
+                                 + hex16 + "::" + ipv6Part + "{4}" + ls32 + "|"
+            + ipv6Part + "?"     + hex16 + "::" + ipv6Part + "{3}" + ls32 + "|"
+            + ipv6Part + "{0,2}" + hex16 + "::" + ipv6Part + "{2}" + ls32 + "|"
+            + ipv6Part + "{0,3}" + hex16 + "::" + ipv6Part         + ls32 + "|"
+            + ipv6Part + "{0,4}" + hex16 + "::"                    + ls32 + "|"
+            + ipv6Part + "{0,5}" + hex16 + "::"                    + hex16 + "|"
+            + ipv6Part + "{0,6}" + hex16 + "::)";
     private static final String segmentChar = "(?:" + pchar + ")";
     private static final String query = "(?:" + pchar + "|/|\\?)*";
+    private static final String queryParamName = "(?:" + pcharNoEq + "|/|\\?)*";
     private static final String fragment = query;
 
 
@@ -25,13 +43,13 @@ public class UrlParser {
     public static Pattern scheme = Pattern.compile("^[a-zA-Z][-a-zA-Z+\\.]*");
     public static Pattern authority = Pattern.compile("(?:([^@]*)@)?([^:]*)(?::(.*))?");
     public static Pattern userinfo = Pattern.compile("(" + username + ")(?::(" + password + "))?");
-    public static Pattern hostname = Pattern.compile(regName);
+    public static Pattern hostname = Pattern.compile("(?:" + regName + "|" + ipv4 + "|\\[" + ipv6 + "\\])");
     public static Pattern port = Pattern.compile("\\d{1,5}");
     public static Pattern pathWithAuthority = Pattern.compile("(?:/" + segmentChar + "*)*");
     public static Pattern pathRootless = Pattern.compile("(?:" + segmentChar + "+(?:" + pathWithAuthority + ")*)");
     public static Pattern pathNoAuthority = Pattern.compile("(?:/" + pathRootless + "?|" + pathRootless + ")?");
     public static Pattern queryString = Pattern.compile(query);
-    public static Pattern queryParam = Pattern.compile("(?:(" + query + ")(?:=(" + query + "))?)");
+    public static Pattern queryParam = Pattern.compile("(?:(" + queryParamName + ")(?:=(" + query + "))?)");
     public static Pattern pageFragment = Pattern.compile(fragment);
 
     public static Url parse(String url) throws MalformedURLException {

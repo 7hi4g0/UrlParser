@@ -1,5 +1,6 @@
 package com.wesleycloversolutions.web;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -12,6 +13,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,8 +31,29 @@ public class UrlParserTest {
         assertEquals(host, parsedUrl.getHostname());
         assertEquals(port, parsedUrl.getPort());
         assertEquals(path, parsedUrl.getPath());
-        //assertEquals(query, matcher.group(4));
         assertEquals(fragment, parsedUrl.getDocumentPart());
+    }
+
+    @Test
+    public void UrlParser_parse_ShouldParseBooleanParams() throws MalformedURLException {
+        Url parsedUrl = UrlParser.parse("https://localhost:8000/search?q=text&json#hello");
+
+        assertNotNull(parsedUrl);
+        assertNotNull(parsedUrl.getArguments());
+        assertTrue(parsedUrl.getArguments().containsKey("json"));
+        assertNull(parsedUrl.getArguments().get("json"));
+    }
+
+    @Test
+    public void UrlParser_parse_ShouldParseValuedParams() throws MalformedURLException {
+        Url parsedUrl = UrlParser.parse("https://localhost:8000/search?q=text&json=1#hello");
+
+        assertNotNull(parsedUrl);
+        assertNotNull(parsedUrl.getArguments());
+        assertTrue(parsedUrl.getArguments().containsKey("q"));
+        assertTrue(parsedUrl.getArguments().containsKey("json"));
+        assertEquals("text", parsedUrl.getArguments().get("q"));
+        assertEquals("1", parsedUrl.getArguments().get("json"));
     }
 
     @ParameterizedTest
@@ -82,14 +105,35 @@ public class UrlParserTest {
             "www.normal.com",
             "www.!$&'()*+,;=-~.com",
             "www.spaced%20url.com",
-            "www.%41.com"})
+            "www.%41.com",
+            "192.168.0.1",
+            "8.8.8.8",
+            "145.78.65.2",
+            "2.0.7.3",
+            "[2001:0200:0001::]",
+            "[2001:4860:4860::8888]"
+    })
     public void UrlParser_HostnameRegex_ShouldMatchValidHostnames(String hostname) {
         Matcher matcher = UrlParser.hostname.matcher(hostname);
 
-        boolean found = matcher.find();
+        boolean found = matcher.matches();
 
         assertTrue(found);
         assertEquals(hostname, matcher.group());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "[2001.0200.0001::/48]",
+            "2001:4860:4860::8888",
+    })
+    public void UrlParser_HostnameRegex_ShouldNotMatchInvalidHostnames(String hostname) {
+        Matcher matcher = UrlParser.hostname.matcher(hostname);
+
+        boolean found = matcher.matches();
+
+        assertFalse(found);
+        assertThrows(IllegalStateException.class, () -> matcher.group());
     }
 
     @ParameterizedTest
