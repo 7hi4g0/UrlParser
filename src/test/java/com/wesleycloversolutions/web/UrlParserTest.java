@@ -24,8 +24,8 @@ public class UrlParserTest {
 
         assertNotNull(parsedUrl);
         assertEquals(scheme, parsedUrl.getProtocol());
-        // assertEquals(username, parsedUrl.getUsername());
-        // assertEquals(password, parsedUrl.getPassword());
+        assertEquals(username, parsedUrl.getUsername());
+        assertEquals(password, parsedUrl.getPassword());
         assertEquals(host, parsedUrl.getHostname());
         assertEquals(port, parsedUrl.getPort());
         assertEquals(path, parsedUrl.getPath());

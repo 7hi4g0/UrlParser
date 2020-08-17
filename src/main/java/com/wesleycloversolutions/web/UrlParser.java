@@ -13,15 +13,18 @@ public class UrlParser {
     private static final String subDelims = "[!$&'()*+,;=]";
     private static final String pctEncoded = "%" + hexDig + hexDig;
     private static final String pchar = unreserved  + "|" + pctEncoded +"|"+ subDelims + "|:|@";
-    private static final String query = "(?:" + pchar + "|/|\\?)*";
-    private static final String fragment = query;
+    private static final String username = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + ")*";
+    private static final String password = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + "|:)*";
     private static final String regName = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + ")*";
     private static final String segmentChar = "(?:" + pchar + ")";
+    private static final String query = "(?:" + pchar + "|/|\\?)*";
+    private static final String fragment = query;
 
 
     public static Pattern urlComponents = Pattern.compile("(?:([^:/?#]+):)(?://([^/?#]*))?([^?#]*)(?:\\?([^#]*))?(?:#(.*))?");
     public static Pattern scheme = Pattern.compile("^[a-zA-Z][-a-zA-Z+\\.]*");
     public static Pattern authority = Pattern.compile("(?:([^@]*)@)?([^:]*)(?::(.*))?");
+    public static Pattern userinfo = Pattern.compile("(" + username + ")(?::(" + password + "))?");
     public static Pattern hostname = Pattern.compile(regName);
     public static Pattern port = Pattern.compile("\\d{1,5}");
     public static Pattern pathWithAuthority = Pattern.compile("(?:/" + segmentChar + "*)*");
@@ -86,7 +89,16 @@ public class UrlParser {
             String portNumber = authorityMatcher.group(3);
 
             // Validate userinfo
-            // TODO
+            if (userinfo != null) {
+                Matcher userinfoMatcher = UrlParser.userinfo.matcher(userinfo);
+
+                if (!userinfoMatcher.matches()) {
+                    throw new MalformedURLException("Invalid userinfo specified: " + userinfo);
+                }
+
+                username = userinfoMatcher.group(1);
+                password = userinfoMatcher.group(2);
+            }
 
             // Validate host
             if (hostname != null && !UrlParser.hostname.matcher(hostname).matches()) {
