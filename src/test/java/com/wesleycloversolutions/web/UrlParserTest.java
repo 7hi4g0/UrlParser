@@ -5,11 +5,13 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.net.MalformedURLException;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -17,17 +19,30 @@ public class UrlParserTest {
 
     @ParameterizedTest
     @MethodSource("provideUrlComponents")
+    public void UrlParser_parse_ShouldParseCorrectURLs(String url, String scheme, String authority, String path, String query, String fragment) throws MalformedURLException {
+        Url parsedUrl = UrlParser.parse(url);
+
+        assertNotNull(parsedUrl);
+        assertEquals(scheme, parsedUrl.getProtocol());
+        //assertEquals(authority, matcher.group(2));
+        //assertEquals(path, matcher.group(3));
+        //assertEquals(query, matcher.group(4));
+        assertEquals(fragment, parsedUrl.getDocumentPart());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideUrlComponents")
     public void UrlParser_ComponentsRegex_ShouldMatchComponents(String url, String scheme, String authority, String path, String query, String fragment) {
         Matcher matcher = UrlParser.urlComponents.matcher(url);
 
-        boolean found = matcher.find();
+        boolean found = matcher.matches();
 
         assertTrue(found);
-        assertEquals(scheme, matcher.group(2));
-        assertEquals(authority, matcher.group(4));
-        assertEquals(path, matcher.group(5));
-        assertEquals(query, matcher.group(7));
-        assertEquals(fragment, matcher.group(9));
+        assertEquals(scheme, matcher.group(1));
+        assertEquals(authority, matcher.group(2));
+        assertEquals(path, matcher.group(3));
+        assertEquals(query, matcher.group(4));
+        assertEquals(fragment, matcher.group(5));
     }
 
     @ParameterizedTest
@@ -38,13 +53,12 @@ public class UrlParserTest {
             "scheme.test",
             "ScHeMe-TeSt"})
     public void UrlParser_SchemeRegex_ShouldMatchValidSchemes(String scheme) {
-        String completeScheme = scheme + ":";
-        Matcher matcher = UrlParser.scheme.matcher(completeScheme);
+        Matcher matcher = UrlParser.scheme.matcher(scheme);
 
-        boolean found = matcher.find();
+        boolean found = matcher.matches();
 
         assertTrue(found);
-        assertEquals(completeScheme, matcher.group());
+        assertEquals(scheme, matcher.group());
     }
 
     @ParameterizedTest
@@ -52,10 +66,9 @@ public class UrlParserTest {
             "scheme_test",
             "scheme%test"})
     public void UrlParser_SchemeRegex_ShouldNotMatchInvalidSchemes(String scheme) {
-        String completeScheme = scheme + ":";
-        final Matcher matcher = UrlParser.scheme.matcher(completeScheme);
+        final Matcher matcher = UrlParser.scheme.matcher(scheme);
 
-        boolean found = matcher.find();
+        boolean found = matcher.matches();
 
         assertFalse(found);
         assertThrows(IllegalStateException.class, () -> matcher.group());
@@ -78,52 +91,49 @@ public class UrlParserTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            ":80",
-            ":65535",
-            ":22"})
+            "80",
+            "65535",
+            "22"})
     public void UrlParser_PortRegex_ShouldMatchValidPort(String port) {
         Matcher matcher = UrlParser.port.matcher(port);
 
-        boolean found = matcher.find();
+        boolean found = matcher.matches();
 
         assertTrue(found);
         assertEquals(port, matcher.group());
-        assertEquals(port.substring(1), matcher.group(1));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "?validQueryString",
-            "?yet%20another%20valid%20query%20string",
-            "?query=true&params=true",
-            "?",
-            "?!$&'()*+,;="})
+            "validQueryString",
+            "yet%20another%20valid%20query%20string",
+            "query=true&params=true",
+            "",
+            "!$&'()*+,;="})
     public void UrlParser_QueryStringRegex_ShouldMatchValidQueryString(String queryString) {
         Matcher matcher = UrlParser.queryString.matcher(queryString);
 
-        boolean found = matcher.find();
+        boolean found = matcher.matches();
 
         assertTrue(found);
         assertEquals(queryString, matcher.group());
-        assertEquals(queryString.substring(1), matcher.group(1));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "#main",
-            "#summary",
-            "#",
-            "#?random-stuff",
-            "#article%20conclusion",
-            "#!$&'()*+,;="})
+            "main",
+            "summary",
+            "",
+            "?random-stuff",
+            "article%20conclusion",
+            "!$&'()*+,;="})
     public void UrlParser_PageFragmentRegex_ShouldMatchValidPageFragment(String pageFragment) {
         Matcher matcher = UrlParser.pageFragment.matcher(pageFragment);
 
-        boolean found = matcher.find();
+        boolean found = matcher.matches();
 
         assertTrue(found);
         assertEquals(pageFragment, matcher.group());
-        assertEquals(pageFragment.substring(1), matcher.group(1));
     }
 
     private static Stream<Arguments> provideUrlComponents() {
